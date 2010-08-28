@@ -82,7 +82,7 @@ my %channels = (
 
 my %tests = (
   capture => {
-    cnt   => 2,
+    cnt   => 3,
     test  => sub {
       my ($m, $c, $t, $l) = @_;
       my ($got_out, $got_err, @got_ret) = capture {
@@ -106,19 +106,20 @@ my %tests = (
     },
   },
   capture_merged => {
-    cnt   => 2,
+    cnt   => 3,
     test  => sub {
       my ($m, $c, $t, $l) = @_;
-      my $got_out = capture_merged {
+      my ($got_out, @got_ret) = capture_merged {
         $methods{$m}->( $channels{$c}{output}->($t) );
       };
       my @expected = $channels{$c}{expect}->($t);
       like( $got_out, qr/\Q$expected[0]\E/, "$l|$m|$c|$t - got STDOUT" );
       like( $got_out, qr/\Q$expected[1]\E/, "$l|$m|$c|$t - got STDERR" );
+      is_deeply( \@got_ret, [$channels{$c}{output}->($t)], "$l|$m|$c|$t - got return" );
     },
   },
   tee => {
-    cnt => 4,
+    cnt => 6,
     test => sub {
       my ($m, $c, $t, $l) = @_;
       my ($got_out, $got_err, @got_ret);
@@ -137,7 +138,7 @@ my %tests = (
     }
   },
   tee_scalar => {
-    cnt => 3,
+    cnt => 4,
     test => sub {
       my ($m, $c, $t, $l) = @_;
       my ($got_out, $got_err);
@@ -154,12 +155,12 @@ my %tests = (
     }
   },
   tee_merged => {
-    cnt => 5,
+    cnt => 9,
     test => sub {
       my ($m, $c, $t, $l) = @_;
-      my ($got_out, $got_err);
+      my ($got_out, $got_err, @got_ret);
       my ($tee_out, $tee_err, @tee_ret) = capture {
-        $got_out = tee_merged {
+        ($got_out, @got_ret) = tee_merged {
           $methods{$m}->( $channels{$c}{output}->($t) );
         };
       };
@@ -169,9 +170,11 @@ my %tests = (
       like( $tee_out, qr/\Q$expected[0]\E/, "$l|$m|$c|$t - tee STDOUT (STDOUT)" );
       like( $tee_out, qr/\Q$expected[1]\E/, "$l|$m|$c|$t - tee STDOUT (STDERR)" );
       _is_or_diff( $tee_err, '', "$l|$m|$c|$t - tee STDERR" );
+      is_deeply( \@got_ret, [$channels{$c}{output}->($t)], "$l|$m|$c|$t - got return" );
       like( $tee_ret[0], qr/\Q$expected[0]\E/, "$l|$m|$c|$t - got return" );
       like( $tee_ret[0], qr/\Q$expected[1]\E/, "$l|$m|$c|$t - got return" );
-      is(scalar @tee_ret, 1);
+      _is_or_diff( $tee_ret[1], $channels{$c}{output}->($t), "$l|$m|$c|$t - tee STDERR" );
+      is(scalar @tee_ret, 2);
     }
   },
 );
