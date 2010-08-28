@@ -327,7 +327,7 @@ sub _capture_tee {
   $@ = $inner_error if $inner_error;
   die $outer_error if $outer_error;
   _debug( "# ending _capture_tee with (@_)...\n" );
-  return $got_out if $merge;
+  return wantarray ? ($got_out, @user_code_result) : $got_out if $merge;
   return wantarray ? ($got_out, $got_err, @user_code_result) : $got_out;
 }
 
