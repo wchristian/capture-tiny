@@ -374,6 +374,8 @@ for my $sub ( keys %api ) {
 
 __END__
 
+=for Pod::Coverage capture capture_merged tee tee_merged
+
 =begin wikidoc
 
 = SYNOPSIS
