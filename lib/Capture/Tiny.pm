@@ -292,7 +292,7 @@ sub _capture_tee {
   _debug( "# redirecting in parent ...\n" );
   _open_std( $stash->{new} );
   # execute user provided code
-  my ($exit_code, $inner_error, $outer_error);
+  my ($exit_code, $inner_error, $outer_error, @user_code_result);
   {
     local *STDIN = *CT_ORIG_STDIN if $localize{stdin}; # get original, not proxy STDIN
     local *STDERR = *STDOUT if $merge; # minimize buffer mixups during $code
@@ -301,7 +301,11 @@ sub _capture_tee {
     _relayer(\*STDERR, $layers{stderr}) unless $merge;
     _debug( "# running code $code ...\n" );
     local $@;
-    eval { $code->(); $inner_error = $@ };
+    @user_code_result = eval {
+      my @res = $code->();
+      $inner_error = $@;
+      return @res;
+    };
     $exit_code = $?; # save this for later
     $outer_error = $@; # save this for later
   }
@@ -324,7 +328,7 @@ sub _capture_tee {
   die $outer_error if $outer_error;
   _debug( "# ending _capture_tee with (@_)...\n" );
   return $got_out if $merge;
-  return wantarray ? ($got_out, $got_err) : $got_out;
+  return wantarray ? ($got_out, $got_err, @user_code_result) : $got_out;
 }
 
 #--------------------------------------------------------------------------#
@@ -351,23 +355,23 @@ __END__
 
 = SYNOPSIS
 
-  use Capture::Tiny qw/capture tee capture_merged tee_merged/;
+    use Capture::Tiny qw/capture tee capture_merged tee_merged/;
 
-  ($stdout, $stderr) = capture {
-    # your code here
-  };
+    ($stdout, $stderr) = capture {
+      # your code here
+    };
 
-  ($stdout, $stderr) = tee {
-    # your code here
-  };
+    ($stdout, $stderr) = tee {
+      # your code here
+    };
 
-  $merged = capture_merged {
-    # your code here
-  };
+    $merged = capture_merged {
+      # your code here
+    };
 
-  $merged = tee_merged {
-    # your code here
-  };
+    $merged = tee_merged {
+      # your code here
+    };
 
 = DESCRIPTION
 
