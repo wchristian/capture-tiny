@@ -2,7 +2,7 @@ use 5.006;
 use strict;
 use warnings;
 package Capture::Tiny::Extended;
-# ABSTRACT: Capture STDOUT, STDERR and return values from from Perl, XS or external programs
+# ABSTRACT: Capture STDOUT and STDERR from from Perl, XS or external programs (with some extras)
 use Carp ();
 use Exporter ();
 use IO::Handle ();
@@ -380,6 +380,8 @@ __END__
 
     use Capture::Tiny::Extended qw/capture tee capture_merged tee_merged/;
 
+    # capture return values
+
     ($stdout, $stderr, @return) = capture {
       # your code here
     };
@@ -395,140 +397,134 @@ __END__
     ($merged, @return) = tee_merged {
       # your code here
     };
+    
+    # or use explicit capture files
+    
+    ($stdout, $stderr, @return) = capture(
+      {
+        # your code here
+      },
+      { stdout => 'stdout.log', stderr => 'stderr.log' }
+    );
 
 = DESCRIPTION
 
-Capture::Tiny::Extended provides a simple, portable way to capture anything sent to
-STDOUT or STDERR, regardless of whether it comes from Perl, from XS code or
-from an external program.  Return values of executed code are captured as well.
-Optionally, output can be teed so that it is captured while being passed through
-to the original handles.  Yes, it even works on Windows.  Stop guessing which of
-a dozen capturing modules to use in any particular situation and just use this
-one.
+Capture::Tiny::Extended is a fork of [Capture::Tiny]. It is functionally
+identical with the parent module, except for the differences documented here.
+Please see the documentation of [Capture::Tiny] for details on standard usage.
 
-This module was heavily inspired by [IO::CaptureOutput], which provides
-similar functionality without the ability to tee output and with more
-complicated code and API.
+As my time permits i will keep this fork up-todate with Capture::Tiny itself and
+integrate any further bugfixes and changes.
 
-= USAGE
+= DIFFERENCES
 
-The following functions are available.  None are exported by default.
+== Capturing Return Values
 
-== capture
+When executing code within a capture you sometimes want to also keep the return
+value, for example when capturing a system() call. In Capture::Tiny this has to
+be done like this:
 
-  ($stdout, $stderr, @return) = capture \&code;
-  $stdout = capture \&code;
-
-The {capture} function takes a code reference and returns what is sent to
-STDOUT and STDERR as well as return values of the executed code.  In scalar
-context, it returns only STDOUT.  If no output was received, returns an empty
-string.  Regardless of context, all output is captured -- nothing is passed to
-the existing handles.
-
-It is prototyped to take a subroutine reference as an argument. Thus, it
-can be called in block form:
-
-  ($stdout, $stderr, @return) = capture {
-    # your code here ...
+  use Capture::Tiny 'capture';
+  
+  my $res;
+  my ( $out, $err ) = capture {
+      $res = system( 'ls' );
   };
 
-== capture_merged
+Capture::Tiny::Extended automatically captures return values and returns them
+after the second return value (or first if you're using the merged functions).
 
-  ($merged, @return) = capture_merged \&code;
-  $merged = capture_merged \&code;
+  use Capture::Tiny::Extended 'capture';
+  
+  my ( $out, $err, $res ) = capture { system( 'ls' ) };
 
-The {capture_merged} function works just like {capture} except STDOUT and
-STDERR are merged. (Technically, STDERR is redirected to STDOUT before
-executing the function.)  If no output was received, returns an empty string.
-As with {capture} it may be called in block form.
+== Teeing In Realtime
 
-Caution: STDOUT and STDERR output in the merged result are not guaranteed to be
-properly ordered due to buffering.
+Sometimes you want to use Capture::Tiny to capture any and all output of an
+action and dump it into a log file, while also displaying it on the screen and
+then post-process the results later on (for example for sending status mails).
 
-== tee
+The only way to do this with Capture::Tiny is code like this:
 
-  ($stdout, $stderr, @return) = tee \&code;
-  $stdout = tee \&code;
+  use Capture::Tiny 'capture';
+  use File::Slurp;
+  
+  my $res;
+  my ( $out, $err ) = capture {
+    # lockfile and other processing here along with debug output
+    $res = system( 'long_running_program' );
+  };
+  
+  file_write 'out.log', $out;
+  send_mail( $err ) if $res;
 
-The {tee} function works just like {capture}, except that output is captured
-as well as passed on to the original STDOUT and STDERR.  As with {capture} it
-may be called in block form.
+This has a very big disadvantage. If the long-running program runs too long, and
+the perl script is started by something like crontab there is no way for you to
+get at the log output. You will have to wait for it to complete before the
+captured output is written to the file.
 
-== tee_merged
+Capture::Tiny::Extended gives you the option to provide filenames for it to use
+as capture buffers. This means the output from the captured code will appear on
+the screen and in the file in realtime, and will afterwards be available to your
+Perl script in the variables returned by the capture function:
 
-  ($merged, @return) = tee_merged \&code;
-  $merged = tee_merged \&code;
+  use Capture::Tiny::Extended 'capture';
+  
+  my ( $out, $err, $res ) = capture(
+    sub {
+      # lockfile and other processing here along with debug output
+      return system( 'long_running_program' );
+    },
+    { stdout => 'out.log', stderr => 'err.log' }
+  );
+  
+  send_mail( $err ) if $res;
 
-The {tee_merged} function works just like {capture_merged} except that output
-is captured as well as passed on to STDOUT.  As with {capture} it may be called
-in block form.
+For purposes of avoiding data loss, the default behavior is to append to the
+specified files. The key 'new_files' can be set to a true value on the extra
+file hash parameter to instruct Capture::Tiny::Extended to attempt to make
+files. It will die however if the specified files already exist.
 
-Caution: STDOUT and STDERR output in the merged result are not guaranteed to be
-properly ordered due to buffering.
+  use Capture::Tiny::Extended 'capture';
+  
+  my $out = capture_merged { system( 'ls' ) }, { stdout => 'out.log', new_files => 1 };
 
-= LIMITATIONS
+If existing files should always be overwritten, no matter what, the key
+'clobber' can be set instead:
 
-== Portability
+  use Capture::Tiny::Extended 'capture';
+  
+  my $out = capture_merged { system( 'ls' ) }, { stdout => 'out.log', clobber => 1 };
 
-Portability is a goal, not a guarantee.  {tee} requires fork, except on
-Windows where {system(1, @cmd)} is used instead.  Not tested on any
-particularly esoteric platforms yet.
+= WHY A FORK?
 
-== PerlIO layers
+The realtime teeing feature was very important for one of my current projects
+and i needed it on CPAN to be able to easily distribute it to many systems.
 
-Capture::Tiny::Extended does it's best to preserve PerlIO layers such as ':utf8' or
-':crlf' when capturing.   Layers should be applied to STDOUT or STDERR ~before~
-the call to {capture} or {tee}.
+I provided a patch for the first difference on Github to David Golden, but due
+to being busy with real life and more important projects than this he was not
+able to find time to proof and integrate it and in the foreseeable future won't
+be able to either.
 
-== Closed STDIN, STDOUT or STDERR
+At the same time i lack the Perl file handle, descriptor and layer chops to take
+responsibility for Capture::Tiny itself.
 
-Capture::Tiny::Extended will work even if STDIN, STDOUT or STDERR have been previously
-closed.  However, since they may be reopened to capture or tee output, any code
-within the captured block that depends on finding them closed will, of course,
-not find them to be closed.  If they started closed, Capture::Tiny::Extended will reclose
-them again when the capture block finishes.
+Usually i would have just written a subclass of the original, but since
+Capture::Tiny is written in functional style this was not possible.
 
-==  Scalar filehandles and STDIN, STDOUT or STDERR
+As such a fork seemed to be the best option to get these features out there. I'd
+be more than happy to see them integrated into C::T someday and will keep my git
+repository in such a state as to make this as easy as possible. (Lots of
+rebasing.)
 
-If STDOUT or STDERR are reopened to scalar filehandles prior to the call to
-{capture} or {tee}, then Capture::Tiny::Extended will override the output handle for the
-duration of the {capture} or {tee} call and then send captured output to the
-output handle after the capture is complete.  (Requires Perl 5.8)
+= ACKNOWLEDGEMENTS
 
-Capture::Tiny::Extended attempts to preserve the semantics of STDIN opened to a scalar
-reference.
+Capture::Tiny is an invaluable tool that uses practically indecent amounts of
+creativity to solve decidedly nontrivial problems and circumvents many cliffs
+the ordinary coder (and most certainly me) would inevitably crash against.
 
-==  Tied STDIN, STDOUT or STDERR
-
-If STDOUT or STDERR are tied prior to the call to {capture} or {tee}, then
-Capture::Tiny::Extended will attempt to override the tie for the duration of the
-{capture} or {tee} call and then send captured output to the tied handle after
-the capture is complete.  (Requires Perl 5.8)
-
-Capture::Tiny::Extended does not (yet) support resending utf8 encoded data to a tied
-STDOUT or STDERR handle.  Characters will appear as bytes.
-
-Capture::Tiny::Extended attempts to preserve the semantics of tied STDIN, but capturing
-or teeing when STDIN is tied is currently broken on Windows.
-
-== Modifiying STDIN, STDOUT or STDERR during a capture
-
-Attempting to modify STDIN, STDOUT or STDERR ~during~ {capture} or {tee} is
-almost certainly going to cause problems.  Don't do that.
-
-== No support for Perl 5.8.0
-
-It's just too buggy when it comes to layers and UTF8.
-
-= ENVIRONMENT
-
-== PERL_CAPTURE_TINY_TIMEOUT
-
-Capture::Tiny::Extended uses subprocesses for {tee}.  By default, Capture::Tiny::Extended will
-timeout with an error if the subprocesses are not ready to receive data within
-30 seconds (or whatever is the value of {$Capture::Tiny::Extended::TIMEOUT}).  An
-alternate timeout may be specified by setting the {PERL_CAPTURE_TINY_TIMEOUT}
-environment variable.  Setting it to zero will disable timeouts.
+Many thanks to David Golden for taking the time and braving all those traps of
+insanity to create Capture::Tiny.
 
 = BUGS
 
@@ -538,35 +534,6 @@ Bugs can be submitted through the web interface at
 
 When submitting a bug or request, please include a test-file or a patch to an
 existing test-file that illustrates the bug or desired feature.
-
-= SEE ALSO
-
-This is a selection of CPAN modules that provide some sort of output capture,
-albeit with various limitations that make them appropriate only in particular
-circumstances.  I'm probably missing some.  The long list is provided to show
-why I felt Capture::Tiny::Extended was necessary.
-
-* [IO::Capture]
-* [IO::Capture::Extended]
-* [IO::CaptureOutput]
-* [IPC::Capture]
-* [IPC::Cmd]
-* [IPC::Open2]
-* [IPC::Open3]
-* [IPC::Open3::Simple]
-* [IPC::Open3::Utils]
-* [IPC::Run]
-* [IPC::Run::SafeHandles]
-* [IPC::Run::Simple]
-* [IPC::Run3]
-* [IPC::System::Simple]
-* [Tee]
-* [IO::Tee]
-* [File::Tee]
-* [Filter::Handle]
-* [Tie::STDERR]
-* [Tie::STDOUT]
-* [Test::Output]
 
 =end wikidoc
 
