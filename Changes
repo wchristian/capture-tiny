@@ -3,3 +3,5 @@ Revision history for {{$dist->name}}
 {{$NEXT}}
 
 	- forked from Capture-Tiny
+	- added ability to capture return values as well
+	- added ability to provide files to capture to in realtime
