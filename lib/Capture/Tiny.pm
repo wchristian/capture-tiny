@@ -249,7 +249,7 @@ sub _slurp {
 
 sub _capture_tee {
   _debug( "# starting _capture_tee with (@_)...\n" );
-  my ($tee_stdout, $tee_stderr, $merge, $code) = @_;
+  my ($tee_stdout, $tee_stderr, $merge, $code, $files) = @_;
   # save existing filehandles and setup captures
   local *CT_ORIG_STDIN  = *STDIN ;
   local *CT_ORIG_STDOUT = *STDOUT;
@@ -280,7 +280,7 @@ sub _capture_tee {
   );
   _debug( "# post-proxy layers for $_\: @{$layers{$_}}\n" ) for qw/stdin stdout stderr/;
   # get handles for capture and apply existing IO layers
-  $stash->{new}{$_} = $stash->{capture}{$_} = File::Temp->new for qw/stdout stderr/;
+  $stash->{new}{$_} = $stash->{capture}{$_} = _capture_file( $_, $files ) for qw/stdout stderr/;
   _debug("# will capture $_ on " .fileno($stash->{capture}{$_})."\n" ) for qw/stdout stderr/;
   # tees may change $stash->{new}
   _start_tee( stdout => $stash ) if $tee_stdout;
@@ -331,6 +331,23 @@ sub _capture_tee {
   return wantarray ? ($got_out, $got_err, @user_code_result) : $got_out;
 }
 
+sub _capture_file {
+  my ( $target, $files ) = @_;
+  
+  return File::Temp->new if !$files->{$target};
+  
+  Carp::confess "$target file '$files->{$target}' already exists, set clobber => 1 to override"
+    if $files->{new_files} and _files_exist( $files->{$target} );
+  
+  my $mode = "+>>";
+  $mode = "+>" if $files->{clobber};
+  
+  my $fh = Symbol::gensym;
+  _open $fh, "$mode$files->{$target}";
+  
+  return $fh;
+}
+
 #--------------------------------------------------------------------------#
 # create API subroutines from [tee STDOUT flag, tee STDERR, merge flag]
 #--------------------------------------------------------------------------#
@@ -344,7 +361,7 @@ my %api = (
 
 for my $sub ( keys %api ) {
   my $args = join q{, }, @{$api{$sub}};
-  eval "sub $sub(&) {unshift \@_, $args; goto \\&_capture_tee;}"; ## no critic
+  eval "sub $sub(&;\$) {unshift \@_, $args; goto \\&_capture_tee;}"; ## no critic
 }
 
 1;
