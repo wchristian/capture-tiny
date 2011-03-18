@@ -2,7 +2,7 @@ package Cases;
 use strict;
 use warnings;
 use Test::More;
-use Capture::Tiny ':all';
+use Capture::Tiny::Extended ':all';
 
 require Exporter;
 our @ISA = 'Exporter';

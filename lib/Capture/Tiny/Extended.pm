@@ -1,7 +1,7 @@
 use 5.006;
 use strict;
 use warnings;
-package Capture::Tiny;
+package Capture::Tiny::Extended;
 # ABSTRACT: Capture STDOUT, STDERR and return values from from Perl, XS or external programs
 use Carp ();
 use Exporter ();
@@ -378,7 +378,7 @@ __END__
 
 = SYNOPSIS
 
-    use Capture::Tiny qw/capture tee capture_merged tee_merged/;
+    use Capture::Tiny::Extended qw/capture tee capture_merged tee_merged/;
 
     ($stdout, $stderr, @return) = capture {
       # your code here
@@ -398,7 +398,7 @@ __END__
 
 = DESCRIPTION
 
-Capture::Tiny provides a simple, portable way to capture anything sent to
+Capture::Tiny::Extended provides a simple, portable way to capture anything sent to
 STDOUT or STDERR, regardless of whether it comes from Perl, from XS code or
 from an external program.  Return values of executed code are captured as well.
 Optionally, output can be teed so that it is captured while being passed through
@@ -476,39 +476,39 @@ particularly esoteric platforms yet.
 
 == PerlIO layers
 
-Capture::Tiny does it's best to preserve PerlIO layers such as ':utf8' or
+Capture::Tiny::Extended does it's best to preserve PerlIO layers such as ':utf8' or
 ':crlf' when capturing.   Layers should be applied to STDOUT or STDERR ~before~
 the call to {capture} or {tee}.
 
 == Closed STDIN, STDOUT or STDERR
 
-Capture::Tiny will work even if STDIN, STDOUT or STDERR have been previously
+Capture::Tiny::Extended will work even if STDIN, STDOUT or STDERR have been previously
 closed.  However, since they may be reopened to capture or tee output, any code
 within the captured block that depends on finding them closed will, of course,
-not find them to be closed.  If they started closed, Capture::Tiny will reclose
+not find them to be closed.  If they started closed, Capture::Tiny::Extended will reclose
 them again when the capture block finishes.
 
 ==  Scalar filehandles and STDIN, STDOUT or STDERR
 
 If STDOUT or STDERR are reopened to scalar filehandles prior to the call to
-{capture} or {tee}, then Capture::Tiny will override the output handle for the
+{capture} or {tee}, then Capture::Tiny::Extended will override the output handle for the
 duration of the {capture} or {tee} call and then send captured output to the
 output handle after the capture is complete.  (Requires Perl 5.8)
 
-Capture::Tiny attempts to preserve the semantics of STDIN opened to a scalar
+Capture::Tiny::Extended attempts to preserve the semantics of STDIN opened to a scalar
 reference.
 
 ==  Tied STDIN, STDOUT or STDERR
 
 If STDOUT or STDERR are tied prior to the call to {capture} or {tee}, then
-Capture::Tiny will attempt to override the tie for the duration of the
+Capture::Tiny::Extended will attempt to override the tie for the duration of the
 {capture} or {tee} call and then send captured output to the tied handle after
 the capture is complete.  (Requires Perl 5.8)
 
-Capture::Tiny does not (yet) support resending utf8 encoded data to a tied
+Capture::Tiny::Extended does not (yet) support resending utf8 encoded data to a tied
 STDOUT or STDERR handle.  Characters will appear as bytes.
 
-Capture::Tiny attempts to preserve the semantics of tied STDIN, but capturing
+Capture::Tiny::Extended attempts to preserve the semantics of tied STDIN, but capturing
 or teeing when STDIN is tied is currently broken on Windows.
 
 == Modifiying STDIN, STDOUT or STDERR during a capture
@@ -524,9 +524,9 @@ It's just too buggy when it comes to layers and UTF8.
 
 == PERL_CAPTURE_TINY_TIMEOUT
 
-Capture::Tiny uses subprocesses for {tee}.  By default, Capture::Tiny will
+Capture::Tiny::Extended uses subprocesses for {tee}.  By default, Capture::Tiny::Extended will
 timeout with an error if the subprocesses are not ready to receive data within
-30 seconds (or whatever is the value of {$Capture::Tiny::TIMEOUT}).  An
+30 seconds (or whatever is the value of {$Capture::Tiny::Extended::TIMEOUT}).  An
 alternate timeout may be specified by setting the {PERL_CAPTURE_TINY_TIMEOUT}
 environment variable.  Setting it to zero will disable timeouts.
 
@@ -534,7 +534,7 @@ environment variable.  Setting it to zero will disable timeouts.
 
 Please report any bugs or feature requests using the CPAN Request Tracker.
 Bugs can be submitted through the web interface at
-[http://rt.cpan.org/Dist/Display.html?Queue=Capture-Tiny]
+[http://rt.cpan.org/Dist/Display.html?Queue=Capture-Tiny-Extended]
 
 When submitting a bug or request, please include a test-file or a patch to an
 existing test-file that illustrates the bug or desired feature.
@@ -544,7 +544,7 @@ existing test-file that illustrates the bug or desired feature.
 This is a selection of CPAN modules that provide some sort of output capture,
 albeit with various limitations that make them appropriate only in particular
 circumstances.  I'm probably missing some.  The long list is provided to show
-why I felt Capture::Tiny was necessary.
+why I felt Capture::Tiny::Extended was necessary.
 
 * [IO::Capture]
 * [IO::Capture::Extended]

@@ -9,7 +9,7 @@ use warnings;
 use Test::More;
 use lib 't/lib';
 use Utils qw/next_fd sig_num/;
-use Capture::Tiny qw/capture/;
+use Capture::Tiny::Extended qw/capture/;
 use Config;
 
 plan tests => 2;

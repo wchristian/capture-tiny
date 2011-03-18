@@ -19,14 +19,14 @@ my @api = qw(
 plan tests => 2 + 2 * @api;
 
 if ( $] eq '5.008' ) {
-  BAIL_OUT("OS unsupported: Perl 5.8.0 is too buggy for Capture::Tiny");
+  BAIL_OUT("OS unsupported: Perl 5.8.0 is too buggy for Capture::Tiny::Extended");
 }
 
-require_ok( 'Capture::Tiny' );
+require_ok( 'Capture::Tiny::Extended' );
 
-can_ok('Capture::Tiny', $_) for @api;
+can_ok('Capture::Tiny::Extended', $_) for @api;
 
-ok( eval "package Foo; use Capture::Tiny ':all'; 1", "import ':all' to Foo" );
+ok( eval "package Foo; use Capture::Tiny::Extended ':all'; 1", "import ':all' to Foo" );
 
 can_ok('Foo', $_) for @api;
 

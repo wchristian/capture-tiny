@@ -1,4 +1,4 @@
-use Capture::Tiny qw[ capture ];
+use Capture::Tiny::Extended qw[ capture ];
 
 my ( $out, $err ) =
  eval { capture { print STDERR "hello\n"; print STDOUT "there\n"; die("foo\n" ) } };
