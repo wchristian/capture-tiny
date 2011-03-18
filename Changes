@@ -2,6 +2,8 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+0.101     2011-03-18 18:17:01 Europe/Berlin
+
 	- forked from Capture-Tiny
 	- added ability to capture return values as well
 	- added ability to provide files to capture to in realtime
