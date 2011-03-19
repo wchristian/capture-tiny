@@ -380,43 +380,45 @@ __END__
 
 = SYNOPSIS
 
-    use Capture::Tiny::Extended qw/capture tee capture_merged tee_merged/;
+  use Capture::Tiny::Extended qw/capture tee capture_merged tee_merged/;
 
-    # capture return values
+  # capture return values
 
-    ($stdout, $stderr, @return) = capture {
-      # your code here
-    };
+  my ($stdout, $stderr, @return) = capture {
+    # your code here
+    return system( 'ls' );
+  };
 
-    ($stdout, $stderr, @return) = tee {
-      # your code here
-    };
-
-    ($merged, @return) = capture_merged {
-      # your code here
-    };
-
-    ($merged, @return) = tee_merged {
-      # your code here
-    };
-    
-    # or use explicit capture files
-    
-    ($stdout, $stderr, @return) = capture(
-      {
-        # your code here
-      },
-      { stdout => 'stdout.log', stderr => 'stderr.log' }
-    );
+  ($merged, @return) = capture_merged {
+    # your code here
+    return system( 'ls' );
+  };
+  
+  # or use explicit capture files
+  
+  ($stdout, $stderr, @return) = capture(
+    sub { # your code here },
+    { stdout => 'stdout.log' }
+  );
 
 = DESCRIPTION
 
 Capture::Tiny::Extended is a fork of [Capture::Tiny]. It is functionally
-identical with the parent module, except for the differences documented here.
-Please see the documentation of [Capture::Tiny] for details on standard usage.
+identical with the parent module, except for the differences documented in this
+POD. Please see the documentation of [Capture::Tiny] for details on standard
+usage.
 
-As my time permits i will keep this fork up-todate with Capture::Tiny itself and
-integrate any further bugfixes and changes.
+Please note that this can be considered an experimental module in some respects.
+I am not as experienced with the subject matter (and in general) as David Golden
+and mostly implemented these features here because i needed them fast and did
+not have the time to spare to wait for them to get into [Capture::Tiny]. If you
+need capture functionality for mission-critical parts, consider whether
+[Capture::Tiny] might be enough for the job.
+
+Of course I will however make all efforts to make this as stable and useful as
+possible by keeping it up-to-date (as my time permits) with changes and bugfixes
+applied to [Capture::Tiny], as well as responding and addressing and change
+requests or bug reports for this module.
 
 = DIFFERENCES
 
@@ -430,7 +432,7 @@ be done like this:
   
   my $res;
   my ( $out, $err ) = capture {
-      $res = system( 'ls' );
+    $res = system( 'ls' );
   };
 
 Capture::Tiny::Extended automatically captures return values and returns them
@@ -445,7 +447,6 @@ after the second return value (or first if you're using the merged functions).
 Sometimes you want to use Capture::Tiny to capture any and all output of an
 action and dump it into a log file, while also displaying it on the screen and
 then post-process the results later on (for example for sending status mails).
-
 The only way to do this with Capture::Tiny is code like this:
 
   use Capture::Tiny 'capture';
@@ -477,10 +478,15 @@ Perl script in the variables returned by the capture function:
       # lockfile and other processing here along with debug output
       return system( 'long_running_program' );
     },
-    { stdout => 'out.log', stderr => 'err.log' }
+    {
+      stdout => 'out.log',
+      stderr => 'err.log',
+    }
   );
   
   send_mail( $err ) if $res;
+
+== Capture File Mode Options
 
 For purposes of avoiding data loss, the default behavior is to append to the
 specified files. The key 'new_files' can be set to a true value on the extra
@@ -489,30 +495,33 @@ files. It will die however if the specified files already exist.
 
   use Capture::Tiny::Extended 'capture';
   
-  my $out = capture_merged { system( 'ls' ) }, { stdout => 'out.log', new_files => 1 };
+  my $out = capture_merged(
+    sub { system( 'ls' ) },
+    { stdout => 'out.log', new_files => 1 }
+  );
 
 If existing files should always be overwritten, no matter what, the key
 'clobber' can be set instead:
 
   use Capture::Tiny::Extended 'capture';
   
-  my $out = capture_merged { system( 'ls' ) }, { stdout => 'out.log', clobber => 1 };
+  my $out = capture_merged(
+    sub { system( 'ls' ) },
+    { stdout => 'out.log', clobber => 1 }
+  );
 
 = WHY A FORK?
 
 The realtime teeing feature was very important for one of my current projects
 and i needed it on CPAN to be able to easily distribute it to many systems.
-
-I provided a patch for the first difference on Github to David Golden, but due
-to being busy with real life and more important projects than this he was not
-able to find time to proof and integrate it and in the foreseeable future won't
-be able to either.
-
-At the same time i lack the Perl file handle, descriptor and layer chops to take
-responsibility for Capture::Tiny itself.
-
-Usually i would have just written a subclass of the original, but since
-Capture::Tiny is written in functional style this was not possible.
+I had provided a patch for the return value capturing on Github to David Golden
+a long while ago, but due to being busy with real life, family and more
+important projects than this he was not able to find time to proof and integrate
+it and in the foreseeable future won't be able to either. At the same time i
+lack the Perl file handle, descriptor and layer chops to take full
+responsibility for Capture::Tiny itself. Usually i would have just written a
+subclass of the original, but since Capture::Tiny is written in functional style
+this was not possible.
 
 As such a fork seemed to be the best option to get these features out there. I'd
 be more than happy to see them integrated into C::T someday and will keep my git
@@ -527,15 +536,6 @@ the ordinary coder (and most certainly me) would inevitably crash against.
 
 Many thanks to David Golden for taking the time and braving all those traps of
 insanity to create Capture::Tiny.
-
-= BUGS
-
-Please report any bugs or feature requests using the CPAN Request Tracker.
-Bugs can be submitted through the web interface at
-[http://rt.cpan.org/Dist/Display.html?Queue=Capture-Tiny-Extended]
-
-When submitting a bug or request, please include a test-file or a patch to an
-existing test-file that illustrates the bug or desired feature.
 
 =end wikidoc
 
