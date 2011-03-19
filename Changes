@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+	- reworded and reformatted documentation
+	- added syntax sugar for passing capture file options
 
 0.101     2011-03-18 18:17:01 Europe/Berlin
 
