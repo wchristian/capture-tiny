@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.102     2011-03-20 00:48:19 Europe/Berlin
 	- reworded and reformatted documentation
 	- added syntax sugar for passing capture file options
 
