@@ -400,6 +400,18 @@ __END__
     sub { # your code here },
     { stdout => 'stdout.log' }
   );
+  
+  # or with sugar
+  
+  use Capture::Tiny::Extended qw/capture tee capture_merged tee_merged capture_files/;
+  
+  ($stdout, $stderr, @return) = capture {
+    # your code here
+  }
+  capture_files (
+    stdout => 'stdout.log',
+    stderr => 'stderr.log',
+  );
 
 = DESCRIPTION
 
@@ -483,6 +495,25 @@ Perl script in the variables returned by the capture function:
       stderr => 'err.log',
     }
   );
+  
+  send_mail( $err ) if $res;
+
+== capture_files
+
+Since using hashes in that way breaks a bit of the syntax magic of the capture
+functions (or makes them harder to read), there exists a sugar function to take
+the file arguments and pass it on to the capture functions:
+
+  use Capture::Tiny::Extended qw( capture capture_files );
+  
+  my ( $out, $err, $res ) = capture {
+    # lockfile and other processing here along with debug output
+    return system( 'long_running_program' );
+  }
+  capture_files {
+    stdout => 'out.log',
+    stderr => 'err.log',
+  };
   
   send_mail( $err ) if $res;
 
