@@ -16,7 +16,7 @@ BEGIN {
 }
 
 our @ISA = qw/Exporter/;
-our @EXPORT_OK = qw/capture capture_merged tee tee_merged/;
+our @EXPORT_OK = qw/capture capture_merged tee tee_merged capture_files/;
 our %EXPORT_TAGS = ( 'all' => \@EXPORT_OK );
 
 my $IS_WIN32 = $^O eq 'MSWin32';
@@ -331,6 +331,10 @@ sub _capture_tee {
   return wantarray ? ($got_out, $got_err, @user_code_result) : $got_out;
 }
 
+#--------------------------------------------------------------------------#
+# capture to files
+#--------------------------------------------------------------------------#
+
 sub _capture_file {
   my ( $target, $files ) = @_;
   
@@ -347,6 +351,8 @@ sub _capture_file {
   
   return $fh;
 }
+
+sub capture_files { return { @_ }; }
 
 #--------------------------------------------------------------------------#
 # create API subroutines from [tee STDOUT flag, tee STDERR, merge flag]
