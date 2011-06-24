@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.113     2011-06-24 14:29:41 Europe/Berlin
     - Tests will not use Test::Differences version 0.60 or greater
 
 0.102     2011-03-20 00:48:19 Europe/Berlin
