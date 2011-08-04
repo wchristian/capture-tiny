@@ -2,6 +2,7 @@ use 5.006;
 use strict;
 use warnings;
 package Capture::Tiny::Extended;
+# VERSION
 # ABSTRACT: Capture STDOUT and STDERR from from Perl, XS or external programs (with some extras)
 use Carp ();
 use Exporter ();
