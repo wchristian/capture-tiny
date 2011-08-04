@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+    - fixed copyright notice, thanks to Marcus Ramberg <marcus@nordaaker.com>
 
 0.113     2011-06-24 14:29:41 Europe/Berlin
     - Tests will not use Test::Differences version 0.60 or greater
